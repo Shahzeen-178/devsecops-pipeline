@@ -1,0 +1,4 @@
+*.json
+security-report.md
+__pycache__/
+*.pyc

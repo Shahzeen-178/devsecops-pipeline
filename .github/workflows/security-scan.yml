@@ -1,0 +1,102 @@
+name: DevSecOps Security Scan
+
+# Yeh pipeline har push aur pull request par khud chalegi
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+# GITHUB_TOKEN ko PR comment likhne ki permission chahiye
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+
+  # ---------- JOB 1: Hardcoded secrets/API keys dhoondna ----------
+  secret-scan:
+    name: Secret Scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # pura git history scan karne ke liye
+
+      - name: Run Gitleaks
+        run: |
+          docker run --rm -v "$PWD":/repo zricethezav/gitleaks:latest \
+            detect --source /repo --report-format json \
+            --report-path /repo/gitleaks-report.json --exit-code 0
+
+      - name: Upload gitleaks report
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: gitleaks-report.json
+
+  # ---------- JOB 2: Vulnerable dependencies check karna ----------
+  dependency-scan:
+    name: Dependency Vulnerability Scan (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: json
+          output: trivy-report.json
+          severity: CRITICAL,HIGH,MEDIUM
+          exit-code: 0   # pipeline ko fail nahi karna, sirf report chahiye
+
+      - name: Upload trivy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.json
+
+  # ---------- JOB 3: Dono reports ko combine kar ke PR par comment karna ----------
+  report:
+    name: Generate & Post Security Report
+    needs: [secret-scan, dependency-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download gitleaks report
+        uses: actions/download-artifact@v4
+        with:
+          name: gitleaks-report
+
+      - name: Download trivy report
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-report
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build markdown report
+        run: python3 scripts/build_report.py
+
+      - name: Comment report on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('security-report.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
