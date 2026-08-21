@@ -88,4 +88,4 @@ cat security-report.md
 - Deleting a file doesn't remove secrets that were previously committed - they remain in git history unless it's rewritten (e.g. with git filter-repo or BFG).
 - Secret scanners are pattern-based, not just "looks random" - they match specific formats (like AWS key length, or Stripe token prefixes), which is why fake test secrets sometimes go undetected until formatted realistically.
 - GitHub's own Push Protection can block a push before it even reaches the repo if it detects a matching secret pattern.
- <--demo test-- >
+ <!--demo test-- >
