@@ -68,6 +68,7 @@ folder before using the pipeline on real projects.
 | Fail the build on findings | Change `exit-code: 0` → `exit-code: 1` in the relevant step |
 
 ---
+Testing pipeline trigger.
 
 ## 🗺️ Roadmap Ideas
 - [ ] Add Semgrep / CodeQL as a real SAST job
