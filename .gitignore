@@ -1,4 +1,5 @@
-*.json
+gitleaks-report.json
+trivy-report.json
 security-report.md
 __pycache__/
 *.pyc
