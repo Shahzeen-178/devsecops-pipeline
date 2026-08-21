@@ -11,6 +11,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  security-events: write
 
 jobs:
 
@@ -60,7 +61,23 @@ jobs:
           name: trivy-report
           path: trivy-report.json
 
-  # ---------- JOB 3: Dono reports ko combine kar ke PR par comment karna ----------
+  # ---------- JOB 3: Apna khud ka code logic check karna (SAST) ----------
+  codeql-scan:
+    name: Code Analysis (CodeQL)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python   # jitni languages project mein hain, unhe yahan list karo
+
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  # ---------- JOB 4: Dono reports ko combine kar ke PR par comment karna ----------
   report:
     name: Generate & Post Security Report
     needs: [secret-scan, dependency-scan]
