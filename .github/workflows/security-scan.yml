@@ -130,6 +130,3 @@ jobs:
           git add docs/history.json
           git diff --staged --quiet || git commit -m "Update security dashboard history [skip ci]"
           git push
-
-
-                <test code>
